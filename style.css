@@ -634,6 +634,108 @@ body.glow-on::after { opacity: 1; }
 
 body.lb-open { overflow: hidden; }
 
+/* 灯箱左右切换按钮 */
+.lb-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: rgba(17, 30, 51, 0.8);
+  color: var(--body);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: 0.25s;
+  backdrop-filter: blur(4px);
+}
+.lb-nav svg { width: 22px; height: 22px; }
+.lb-prev { left: 1.4rem; }
+.lb-next { right: 1.4rem; }
+.lb-nav:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 18px rgba(100, 255, 218, 0.25);
+}
+
+/* ================= 滚动进度条 ================= */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  z-index: 60;
+  background: linear-gradient(90deg, var(--accent), var(--indigo));
+  border-radius: 0 3px 3px 0;
+  pointer-events: none;
+}
+
+/* ================= 回到顶部 ================= */
+.back-top {
+  position: fixed;
+  right: 2rem;
+  bottom: 2rem;
+  z-index: 40;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--body);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: 0.3s;
+}
+.back-top svg { width: 20px; height: 20px; }
+.back-top.show {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+.back-top:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 20px rgba(100, 255, 218, 0.2);
+  transform: translateY(-3px);
+}
+
+/* ================= 奖项条目 ↔ 证书联动 ================= */
+.entry.has-cert { cursor: pointer; }
+
+.entry.has-cert::after {
+  content: "查看证书 ↗";
+  position: absolute;
+  right: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .entry.has-cert:hover::after { opacity: 0.9; }
+}
+
+@media (hover: none) {
+  .entry.has-cert::after {
+    content: "📜";
+    opacity: 0.7;
+    font-size: 0.85rem;
+  }
+}
+
 @media (max-width: 960px) {
   .side-avatar { width: 108px; height: 108px; }
   .avatar-box { width: 108px; height: 108px; margin-bottom: 1.1rem; }

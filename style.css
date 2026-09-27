@@ -62,6 +62,39 @@ ul { list-style: none; }
   line-height: 1.2;
 }
 
+/* 流光渐变文字（复刻 GradientText 组件：300% 渐变 + 位置往返循环） */
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .side-name {
+    background-image: linear-gradient(90deg, #e6f1ff, var(--accent), var(--indigo), #e6f1ff);
+    background-size: 300% 100%;
+    background-repeat: repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .dir-head h3 {
+    background-image: linear-gradient(90deg, var(--text), var(--accent), var(--indigo), var(--text));
+    background-size: 300% 100%;
+    background-repeat: repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: gt-flow 8s ease-in-out infinite;
+  }
+
+  .dir-entry:hover .dir-head h3,
+  .dir-entry.open .dir-head h3 { animation-duration: 3s; }
+}
+
+@keyframes gt-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .side-role {
   margin-top: 0.5rem;
   font-size: 1.2rem;
@@ -316,6 +349,7 @@ ul { list-style: none; }
   .btn:hover, .side-social a:hover { transform: none; }
   .orb { animation: none; }
   .side-avatar, .side-name, .side-role, .side-blurb, .side-nav, .side-social { animation: none; }
+  .side-name, .dir-head h3 { animation: none; }
   .sec-head .sec-line { transform: none; transition: none; }
   .dir-panel { transition: none; }
   body::after { display: none; }
@@ -569,7 +603,11 @@ body.lb-open { overflow: hidden; }
   to { opacity: 1; transform: none; }
 }
 .side-avatar { animation: rise-in 0.7s 0.05s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
-.side-name { animation: rise-in 0.7s 0.15s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.side-name {
+  /* 入场动画与流光渐变合并声明，避免相互覆盖 */
+  animation: rise-in 0.7s 0.15s cubic-bezier(0.22, 1, 0.36, 1) backwards,
+    gt-flow 8s ease-in-out infinite;
+}
 .side-role { animation: rise-in 0.7s 0.25s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 .side-blurb { animation: rise-in 0.7s 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 .side-nav { animation: rise-in 0.7s 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards; }

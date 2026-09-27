@@ -6,22 +6,22 @@
   <title>邰穗江 · 个人主页</title>
   <meta name="description" content="邰穗江的个人网站——广西职业师范学院物联网专业在读，热爱编程与硬件，正在向嵌入式方向发展。">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
-  <link rel="stylesheet" href="style.css?v=20260926c">
+  <link rel="stylesheet" href="style.css?v=20260926e">
 </head>
 <body>
 
-  <!-- 背景漂浮光斑 -->
-  <div class="bg-orbs" aria-hidden="true">
-    <span class="orb orb-a"></span>
-    <span class="orb orb-b"></span>
-  </div>
+  <!-- Grainient：WebGL 流动渐变背景（WebGL 不可用时自动隐藏并回退到静态背景） -->
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
   <div class="layout">
 
     <!-- ============ 左侧固定信息栏 ============ -->
     <aside class="sidebar">
       <div class="side-top">
-        <img class="side-avatar" src="images/avatar.jpg" alt="邰穗江的照片" width="140" height="140">
+        <div class="avatar-box">
+          <canvas class="rings-canvas" aria-hidden="true"></canvas>
+          <img class="side-avatar" src="images/avatar.jpg" alt="邰穗江的照片" width="140" height="140">
+        </div>
         <h1 class="side-name">邰穗江</h1>
         <p class="side-role">物联网专业在读</p>
         <p class="side-blurb">
@@ -68,30 +68,34 @@
           <h2>关于我</h2>
           <span class="sec-line"></span>
         </header>
-        <div class="prose reveal">
-          <p>
-            我是<strong>邰穗江</strong>，19 岁，来自贵州省黔东南州台江县，
-            目前是<strong>广西职业师范学院 计算机与信息工程学院</strong>物联网专业的大二学生。
-          </p>
-          <p>
-            我对<strong>编程</strong>和<strong>硬件</strong>都充满兴趣，正在向<strong>嵌入式方向</strong>发展。
-            嵌入式软件还是嵌入式硬件？说实话我还没想好——所以我打算两条路都去试一试，
-            在动手做项目的过程中，找到自己真正热爱的那条。
-          </p>
-          <p>
-            课堂之外，我在跑步爱好者协会带训练，在物联网电子技术协会做技术，
-            也在一次次竞赛里打磨自己。课余坚持跑步，也让我相信：技术和成长一样，靠的是日复一日的积累。
-          </p>
-        </div>
+        <div class="about-grid">
+          <div class="prose reveal">
+            <p>
+              我是<strong>邰穗江</strong>，19 岁，来自贵州省黔东南州台江县，
+              目前是<strong>广西职业师范学院 计算机与信息工程学院</strong>物联网专业的大二学生。
+            </p>
+            <p>
+              我对<strong>编程</strong>和<strong>硬件</strong>都充满兴趣，正在向<strong>嵌入式方向</strong>发展。
+              嵌入式软件还是嵌入式硬件？说实话我还没想好——所以我打算两条路都去试一试，
+              在动手做项目的过程中，找到自己真正热爱的那条。
+            </p>
+            <p>
+              课堂之外，我在跑步爱好者协会带训练，在物联网电子技术协会做技术，
+              也在一次次竞赛里打磨自己。课余坚持跑步，也让我相信：技术和成长一样，靠的是日复一日的积累。
+            </p>
+          </div>
 
-        <dl class="facts reveal">
-          <div><dt>家乡</dt><dd>贵州省黔东南州台江县</dd></div>
-          <div><dt>学校</dt><dd>广西职业师范学院</dd></div>
-          <div><dt>学院</dt><dd>计算机与信息工程学院</dd></div>
-          <div><dt>专业</dt><dd>物联网专业 · 大二</dd></div>
-          <div><dt>兴趣</dt><dd>编程 · 硬件 · 中长跑</dd></div>
-          <div><dt>方向</dt><dd>嵌入式开发（探索中）</dd></div>
-        </dl>
+          <aside class="facts reveal">
+            <dl>
+              <div><dt>家乡</dt><dd>贵州省黔东南州台江县</dd></div>
+              <div><dt>学校</dt><dd>广西职业师范学院</dd></div>
+              <div><dt>学院</dt><dd>计算机与信息工程学院</dd></div>
+              <div><dt>专业</dt><dd>物联网专业 · 大二</dd></div>
+              <div><dt>兴趣</dt><dd>编程 · 硬件 · 中长跑</dd></div>
+              <div><dt>方向</dt><dd>嵌入式开发（探索中）</dd></div>
+            </dl>
+          </aside>
+        </div>
       </section>
 
       <!-- 02 探索方向 -->
@@ -413,6 +417,7 @@
     </figure>
   </div>
 
-  <script src="script.js?v=20260926c"></script>
+  <script src="script.js?v=20260926e"></script>
+  <script src="webgl-effects.js?v=20260926f"></script>
 </body>
 </html>

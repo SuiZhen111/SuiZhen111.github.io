@@ -176,17 +176,71 @@
     });
   }
 
-  /* ---------- 证书灯箱 ---------- */
+  /* ---------- 回到顶部 + 滚动进度条 ---------- */
+  var backTop = document.getElementById('backTop');
+  var progressBar = document.getElementById('scrollProgress');
+  var scrollTicking = false;
+
+  function onScroll() {
+    var y = window.scrollY || window.pageYOffset;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    if (progressBar) {
+      progressBar.style.width = (max > 0 ? (y / max) * 100 : 0) + '%';
+    }
+    if (backTop) {
+      backTop.classList.toggle('show', y > window.innerHeight * 0.6);
+    }
+    scrollTicking = false;
+  }
+
+  window.addEventListener('scroll', function () {
+    if (!scrollTicking) {
+      scrollTicking = true;
+      requestAnimationFrame(onScroll);
+    }
+  }, { passive: true });
+  onScroll();
+
+  if (backTop) {
+    backTop.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    });
+  }
+
+  /* ---------- 头像彩蛋：触发光环爆发 ---------- */
+  var avatar = document.querySelector('.side-avatar');
+  if (avatar && !reduceMotion) {
+    ['mouseenter', 'click'].forEach(function (evt) {
+      avatar.addEventListener(evt, function () {
+        document.dispatchEvent(new CustomEvent('avatar:burst'));
+      });
+    });
+  }
+
+  /* ---------- 证书灯箱（支持左右切换与键盘导航） ---------- */
   var lightbox = document.getElementById('lightbox');
   var lbImg = document.getElementById('lbImg');
   var lbCap = document.getElementById('lbCap');
   var lbClose = document.getElementById('lbClose');
+  var lbPrev = document.getElementById('lbPrev');
+  var lbNext = document.getElementById('lbNext');
+  var certCards = Array.prototype.slice.call(
+    document.querySelectorAll('.cert-card')
+  );
+  var lbIndex = 0;
 
-  function openLightbox(card) {
+  function showCert(i) {
+    if (!certCards.length) return;
+    lbIndex = (i + certCards.length) % certCards.length;
+    var card = certCards[lbIndex];
     var img = card.querySelector('img');
     lbImg.src = img.src;
     lbImg.alt = img.alt;
     lbCap.textContent = card.getAttribute('data-cap') || img.alt;
+  }
+
+  function openLightbox(card) {
+    showCert(certCards.indexOf(card));
     lightbox.hidden = false;
     document.body.classList.add('lb-open');
     lbClose.focus();
@@ -197,15 +251,32 @@
     document.body.classList.remove('lb-open');
   }
 
-  document.querySelectorAll('.cert-card').forEach(function (card) {
+  certCards.forEach(function (card) {
     card.addEventListener('click', function () { openLightbox(card); });
   });
 
+  if (lbPrev) lbPrev.addEventListener('click', function () { showCert(lbIndex - 1); });
+  if (lbNext) lbNext.addEventListener('click', function () { showCert(lbIndex + 1); });
   lbClose.addEventListener('click', closeLightbox);
   lightbox.addEventListener('click', function (e) {
     if (e.target === lightbox) closeLightbox();
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !lightbox.hidden) closeLightbox();
+    if (lightbox.hidden) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') showCert(lbIndex - 1);
+    if (e.key === 'ArrowRight') showCert(lbIndex + 1);
+  });
+
+  /* ---------- 奖项条目 ↔ 证书联动：点击奖项直接打开对应证书 ---------- */
+  document.querySelectorAll('.entry.has-cert').forEach(function (entry) {
+    entry.addEventListener('click', function () {
+      var file = entry.getAttribute('data-cert');
+      var card = certCards.filter(function (c) {
+        var img = c.querySelector('img');
+        return img && img.src.slice(img.src.lastIndexOf('/') + 1) === file;
+      })[0];
+      if (card) openLightbox(card);
+    });
   });
 })();

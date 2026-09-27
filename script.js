@@ -113,22 +113,34 @@
       });
   }
 
-  /* ---------- 探索方向：悬停展开并保持，点击可收起 ---------- */
+  /* ---------- 探索方向：悬停展开，移开自动收起；触屏设备点按切换 ---------- */
+  var canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+
   document.querySelectorAll('.dir-entry').forEach(function (panel) {
-    function expand() {
-      if (!panel.classList.contains('open')) {
-        panel.classList.add('open');
-        panel.setAttribute('aria-expanded', 'true');
-      }
-    }
-    function toggle() {
-      var open = panel.classList.toggle('open');
+    function set(open) {
+      panel.classList.toggle('open', open);
       panel.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
-    panel.addEventListener('pointerenter', function (e) {
-      if (e.pointerType !== 'touch') expand();
-    });
-    panel.addEventListener('click', toggle);
+    function toggle() {
+      set(!panel.classList.contains('open'));
+    }
+
+    if (canHover && !reduceMotion) {
+      /* 支持悬停的设备：移入展开，移出收起 */
+      panel.addEventListener('pointerenter', function (e) {
+        if (e.pointerType !== 'touch') set(true);
+      });
+      panel.addEventListener('pointerleave', function (e) {
+        if (e.pointerType !== 'touch') set(false);
+      });
+      panel.addEventListener('focus', function () { set(true); });
+      panel.addEventListener('blur', function () { set(false); });
+    } else {
+      /* 触屏设备：点按切换 */
+      panel.addEventListener('click', toggle);
+    }
+
+    /* 键盘兜底 */
     panel.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();

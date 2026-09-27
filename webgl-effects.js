@@ -294,6 +294,10 @@
       'uFadeIn', 'uFadeOut', 'uMouseInfluence', 'uHoverAmount', 'uHoverScale', 'uParallax',
       'uBurst', 'uCoverageAlpha', 'uResolution', 'uMouse', 'uColor', 'uColorTwo', 'uRingCount']);
 
+    /* 头像彩蛋：监听爆发事件 */
+    var burst = 0;
+    document.addEventListener('avatar:burst', function () { burst = 1; });
+
     function resize() {
       var w = Math.max(1, canvas.clientWidth);
       var h = Math.max(1, canvas.clientHeight);
@@ -345,6 +349,9 @@
       var dt = lastT === 0 ? 0 : Math.min(now - lastT, 100);
       lastT = now;
       elapsed += dt * 0.001 * 0.55;
+      burst *= 0.95;
+      if (burst < 0.001) burst = 0;
+      gl.uniform1f(U.uBurst, burst);
       render();
       raf = requestAnimationFrame(loop);
     }

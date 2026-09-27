@@ -149,6 +149,33 @@
     });
   });
 
+  /* ---------- 探索方向卡片：BorderGlow 边缘流光（跟随鼠标的光束） ---------- */
+  if (finePointer && !reduceMotion) {
+    document.querySelectorAll('.dir-entry').forEach(function (card) {
+      card.addEventListener('pointermove', function (e) {
+        var rect = card.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+        var cx = rect.width / 2;
+        var cy = rect.height / 2;
+        var dx = x - cx;
+        var dy = y - cy;
+        var kx = dx !== 0 ? cx / Math.abs(dx) : Infinity;
+        var ky = dy !== 0 ? cy / Math.abs(dy) : Infinity;
+        /* 光标靠近边缘的程度 0~1 */
+        var edge = Math.min(Math.max(1 / Math.min(kx, ky), 0), 1);
+        /* 光标相对卡片中心的角度 */
+        var deg = (dx === 0 && dy === 0) ? 0 : Math.atan2(dy, dx) * 180 / Math.PI + 90;
+        if (deg < 0) deg += 360;
+        card.style.setProperty('--edge-proximity', edge.toFixed(3));
+        card.style.setProperty('--cursor-angle', deg.toFixed(3) + 'deg');
+      });
+      card.addEventListener('pointerleave', function () {
+        card.style.setProperty('--edge-proximity', '0');
+      });
+    });
+  }
+
   /* ---------- 证书灯箱 ---------- */
   var lightbox = document.getElementById('lightbox');
   var lbImg = document.getElementById('lbImg');

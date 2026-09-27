@@ -5,8 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>邰穗江 · 个人主页</title>
   <meta name="description" content="邰穗江的个人网站——广西职业师范学院物联网专业在读，热爱编程与硬件，正在向嵌入式方向发展。">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="邰穗江 · 个人主页">
+  <meta property="og:description" content="物联网专业在读，热爱编程与硬件，正在向嵌入式方向发展。12 项竞赛荣誉 · 16 张证书。">
+  <meta property="og:url" content="https://suizhen111.github.io/">
+  <meta property="og:image" content="https://suizhen111.github.io/images/og-banner.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="邰穗江 · 个人主页">
+  <meta name="twitter:description" content="物联网专业在读，热爱编程与硬件，正在向嵌入式方向发展。">
+  <meta name="twitter:image" content="https://suizhen111.github.io/images/og-banner.jpg">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
-  <link rel="stylesheet" href="style.css?v=20260926e">
+  <link rel="stylesheet" href="style.css?v=20260926g">
 </head>
 <body>
 
@@ -148,7 +157,7 @@
 
         <p class="group-label">专业竞赛类</p>
         <ul class="entries">
-          <li class="entry reveal">
+          <li class="entry reveal has-cert" data-cert="cert-03.jpg">
             <p class="entry-meta">国家级</p>
             <div class="entry-body">
               <h3>中国机器人及人工智能大赛</h3>
@@ -162,21 +171,21 @@
               <p class="desc">自治区级立项（共 2 项）</p>
             </div>
           </li>
-          <li class="entry reveal">
+          <li class="entry reveal has-cert" data-cert="cert-02.jpg">
             <p class="entry-meta">自治区级</p>
             <div class="entry-body">
               <h3>"挑战杯"竞赛（2025—2026 学年）</h3>
               <p class="desc">广西赛区三等奖</p>
             </div>
           </li>
-          <li class="entry reveal">
+          <li class="entry reveal has-cert" data-cert="cert-05.jpg">
             <p class="entry-meta">自治区级</p>
             <div class="entry-body">
               <h3>中国大学生计算机设计大赛</h3>
               <p class="desc">广西赛区三等奖</p>
             </div>
           </li>
-          <li class="entry reveal">
+          <li class="entry reveal has-cert" data-cert="cert-01.jpg">
             <p class="entry-meta">自治区级</p>
             <div class="entry-body">
               <h3>广西大学生计算机设计大赛</h3>
@@ -190,7 +199,7 @@
               <p class="desc">二等奖</p>
             </div>
           </li>
-          <li class="entry reveal">
+          <li class="entry reveal has-cert" data-cert="cert-14.jpg">
             <p class="entry-meta">院级</p>
             <div class="entry-body">
               <h3>"挑战杯"竞赛（2025—2026 学年）</h3>
@@ -201,14 +210,14 @@
 
         <p class="group-label">文体赛事类</p>
         <ul class="entries">
-          <li class="entry reveal">
+          <li class="entry reveal has-cert" data-cert="cert-11.jpg">
             <p class="entry-meta">校级</p>
             <div class="entry-body">
               <h3>广西职业师范学院第七届运动会 · 800 米</h3>
               <p class="desc">一等奖</p>
             </div>
           </li>
-          <li class="entry reveal">
+          <li class="entry reveal has-cert" data-cert="cert-08.jpg">
             <p class="entry-meta">校级</p>
             <div class="entry-body">
               <h3>广西职业师范学院第七届运动会 · 1500 米</h3>
@@ -219,21 +228,21 @@
 
         <p class="group-label">综合荣誉类</p>
         <ul class="entries">
-          <li class="entry reveal">
+          <li class="entry reveal has-cert" data-cert="cert-06.jpg">
             <p class="entry-meta">校级</p>
             <div class="entry-body">
               <h3>校级三好学生</h3>
               <p class="desc">2025—2026 学年</p>
             </div>
           </li>
-          <li class="entry reveal">
+          <li class="entry reveal has-cert" data-cert="cert-13.png">
             <p class="entry-meta">校级</p>
             <div class="entry-body">
               <h3>校级优秀共青团员</h3>
               <p class="desc">2025—2026 学年</p>
             </div>
           </li>
-          <li class="entry reveal">
+          <li class="entry reveal has-cert" data-cert="cert-04.jpg">
             <p class="entry-meta">校级</p>
             <div class="entry-body">
               <h3>校级优秀志愿者</h3>
@@ -411,13 +420,25 @@
     <button class="lb-close" id="lbClose" type="button" aria-label="关闭大图">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
+    <button class="lb-nav lb-prev" id="lbPrev" type="button" aria-label="上一张证书">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <button class="lb-nav lb-next" id="lbNext" type="button" aria-label="下一张证书">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
     <figure>
       <img id="lbImg" src="" alt="证书大图">
       <figcaption id="lbCap"></figcaption>
     </figure>
   </div>
 
-  <script src="script.js?v=20260926e"></script>
-  <script src="webgl-effects.js?v=20260926f"></script>
+  <!-- 滚动进度条 + 回到顶部 -->
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+  <button class="back-top" id="backTop" type="button" aria-label="回到顶部">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+  </button>
+
+  <script src="script.js?v=20260926g"></script>
+  <script src="webgl-effects.js?v=20260926g"></script>
 </body>
 </html>

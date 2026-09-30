@@ -104,7 +104,7 @@
   }
 
   if (!reduceMotion) {
-    document.querySelectorAll('.btn, .cert-card, .entry, .dir-entry, .pills li, .side-social a')
+    document.querySelectorAll('.btn, .cert-card, .entry, .dir-entry, .skill-card, .stat, .pills li, .chips li, .side-social a, .side-stat')
       .forEach(function (el) {
         el.addEventListener('pointerenter', function (e) {
           if (e.pointerType === 'touch') return;
@@ -149,9 +149,9 @@
     });
   });
 
-  /* ---------- 探索方向卡片：BorderGlow 边缘流光（跟随鼠标的光束） ---------- */
+  /* ---------- 卡片边缘流光（BorderGlow：跟随鼠标的光束） ---------- */
   if (finePointer && !reduceMotion) {
-    document.querySelectorAll('.dir-entry').forEach(function (card) {
+    document.querySelectorAll('.dir-entry, .skill-card').forEach(function (card) {
       card.addEventListener('pointermove', function (e) {
         var rect = card.getBoundingClientRect();
         var x = e.clientX - rect.left;
@@ -279,4 +279,377 @@
       if (card) openLightbox(card);
     });
   });
+})();
+
+/* ============================================================
+   数字人助手（问答气泡）
+   入口：3D 数字人右上角的聊天气泡
+   纯前端实现：无网络请求、无第三方依赖、无需 API Key
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var reduceMotion = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var finePointer = window.matchMedia &&
+    window.matchMedia('(pointer: fine)').matches;
+
+  var avatarRow = document.querySelector('.avatar-row');
+  var buddy = document.getElementById('buddy');
+  var chatBtn = document.getElementById('buddyChat');
+  var heroAskBtn = document.getElementById('h3dAsk');
+  var hero3d = document.getElementById('hero3d');
+  var bubble = document.getElementById('h3dBubble');
+  var panel = document.getElementById('assistant');
+  var msgs = document.getElementById('asstMsgs');
+  var form = document.getElementById('asstForm');
+  var input = document.getElementById('asstInput');
+  var statusEl = document.getElementById('asstStatus');
+  var closeBtn = document.getElementById('asstClose');
+
+  if (!avatarRow || !chatBtn || !panel || !msgs || !form || !input) return;
+
+  var opened = false;
+  var greeted = false;
+  var talkTimer = null;
+  var bubbleTimer = null;
+
+  /* ---------- 知识库 + 全局人设：都在 qa-data.js（systemPrompt 那一段
+       就是 3D 数字人的 System Prompt，想改人设 / 改回答只改那个文件） ---------- */
+  var QA = window.QA_DATA || {};
+  var WELCOME = QA.welcome ||
+    '你好，我是邰穗江的 3D 数字分身。关于我本人、成绩、项目、跑步或者怎么联系，都可以直接问我。';
+  var FALLBACK = QA.fallback ||
+    '这个问题我暂时还没收录答案哦～你可以试试问我的基本信息、项目经历或者兴趣爱好~';
+  var FAQ = QA.list || [];
+
+  /* 人设规则 1 + 2：命中越多、越长的关键词越优先（只答题库收录的）；
+     一条都没中就用兜底回答，绝不现编 */
+  function answerFor(q) {
+    var s = String(q || '').toLowerCase();
+    var best = null;
+    var bestScore = 0;
+    for (var i = 0; i < FAQ.length; i++) {
+      var keys = (FAQ[i] && FAQ[i].keys) || [];
+      var score = 0;
+      for (var j = 0; j < keys.length; j++) {
+        var k = String(keys[j] || '').toLowerCase();
+        if (k && s.indexOf(k) !== -1) score += 1 + Math.min(k.length, 6);
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = FAQ[i];
+      }
+    }
+    return bestScore > 0 && best ? best.a : FALLBACK;
+  }
+
+  /* ---------- 消息渲染 ---------- */
+  function scrollMsgs() { msgs.scrollTop = msgs.scrollHeight; }
+
+  function addMsg(text, who) {
+    var el = document.createElement('div');
+    el.className = 'msg ' + who;
+    el.textContent = text;
+    msgs.appendChild(el);
+    scrollMsgs();
+    return el;
+  }
+
+  function addTyping() {
+    var el = document.createElement('div');
+    el.className = 'msg bot typing';
+    el.innerHTML = '<i></i><i></i><i></i>';
+    msgs.appendChild(el);
+    scrollMsgs();
+    return el;
+  }
+
+  function setStatus(text) {
+    if (!statusEl) return;
+    statusEl.lastChild.nodeValue = text;
+  }
+
+  /* 数字人跟着“说话”：回答出现时，侧栏和正文的模型一起轻轻点头，
+     正文舞台上同时把答案显示成一个气泡 */
+  function talkFor(ms) {
+    if (reduceMotion) return;
+    if (buddy) buddy.classList.add('talking');
+    if (hero3d) hero3d.classList.add('talking');
+    clearTimeout(talkTimer);
+    talkTimer = setTimeout(function () {
+      if (buddy) buddy.classList.remove('talking');
+      if (hero3d) hero3d.classList.remove('talking');
+    }, ms);
+  }
+
+  function showBubble(text) {
+    if (!bubble) return;
+    /* 内层 span 承担截断：clamp 作用在内容上，文字就不会漏进气泡的下内边距里 */
+    bubble.textContent = '';
+    var inner = document.createElement('span');
+    inner.textContent = text;
+    bubble.appendChild(inner);
+    bubble.classList.add('is-on');
+    clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(function () {
+      if (bubble) bubble.classList.remove('is-on');
+    }, Math.min(16000, 7000 + text.length * 70));
+  }
+
+  function botSay(text) {
+    var t = addTyping();
+    setStatus('思考中…');
+    setTimeout(function () {
+      if (t.parentNode) t.parentNode.removeChild(t);
+      addMsg(text, 'bot');
+      setStatus('在线 · 可以提问');
+      talkFor(Math.min(3200, 600 + text.length * 26));
+      showBubble(text);
+    }, reduceMotion ? 0 : 520);
+  }
+
+  function ask(q) {
+    q = String(q || '').trim();
+    if (!q) return;
+    addMsg(q, 'user');
+    botSay(answerFor(q));
+  }
+
+  /* ---------- 面板开合与定位 ---------- */
+  function place() {
+    if (window.innerWidth <= 960) {
+      panel.style.left = panel.style.top = '';
+      panel.style.right = panel.style.bottom = '';
+      return;
+    }
+    var r = avatarRow.getBoundingClientRect();
+    var w = panel.offsetWidth;
+    var h = panel.offsetHeight;
+    var left = Math.max(12, Math.min(r.left, window.innerWidth - w - 12));
+    var top = r.bottom + 14;
+    if (top + h > window.innerHeight - 12) {
+      top = Math.max(12, window.innerHeight - 12 - h);
+    }
+    panel.style.left = left + 'px';
+    panel.style.top = top + 'px';
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+  }
+
+  /* 两个入口（侧栏气泡、正文「向我提问」）的展开状态要一致 */
+  function setExpanded(v) {
+    var s = v ? 'true' : 'false';
+    if (chatBtn) chatBtn.setAttribute('aria-expanded', s);
+    if (heroAskBtn) heroAskBtn.setAttribute('aria-expanded', s);
+  }
+
+  function openPanel() {
+    if (opened) return;
+    opened = true;
+    panel.hidden = false;
+    place();
+    document.body.classList.add('asst-open');
+    setExpanded(true);
+    document.dispatchEvent(new CustomEvent('avatar:burst'));
+    if (!greeted) {
+      greeted = true;
+      botSay(WELCOME);
+    }
+    if (finePointer) setTimeout(function () { input.focus(); }, 60);
+  }
+
+  function closePanel(keepFocus) {
+    if (!opened) return;
+    opened = false;
+    panel.hidden = true;
+    document.body.classList.remove('asst-open');
+    setExpanded(false);
+    if (keepFocus) chatBtn.focus();
+  }
+
+  chatBtn.addEventListener('click', function () {
+    opened ? closePanel(true) : openPanel();
+  });
+
+  /* 正文大舞台旁的「向我提问」：同一个面板，同一个数字人 */
+  if (heroAskBtn) {
+    heroAskBtn.addEventListener('click', function () {
+      if (opened) input.focus();
+      else openPanel();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function () { closePanel(true); });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    ask(input.value);
+    input.value = '';
+    input.focus();
+  });
+
+  document.querySelectorAll('.asst-quick button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      ask(b.getAttribute('data-q') || b.textContent);
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && opened) closePanel(true);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!opened) return;
+    if (panel.contains(e.target) || avatarRow.contains(e.target)) return;
+    if (heroAskBtn && heroAskBtn.contains(e.target)) return;   // 开关按钮自己，别刚开就被点关
+    closePanel(false);
+  });
+
+  window.addEventListener('resize', function () {
+    if (opened) place();
+  });
+})();
+
+/* ============================================================
+   3D 数字人（侧栏头像旁）
+   · 左右拖拽：正面 → 侧面 → 背面，模拟转身
+   · 点击头部：在 8 个表情之间切换
+   · 点击身体：回到正面全身
+   · 键盘：← → 转身，Enter / 空格 换表情
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var reduceMotion = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var stage = document.getElementById('buddyStage');
+  if (!stage) return;
+
+  /* 平面图已经下线：这里只管状态（当前视角 / 当前表情）和提示文字，
+     画面本身由 viewer3d.js 的 3D 舞台渲染 */
+  var N_VIEWS = 3;     // 正面 / 侧面 / 背面
+  var N_MOODS = 8;     // 8 种表情
+
+  var VIEW_LABEL = ['正面', '侧面', '背面'];
+  var MOOD_LABEL = ['大笑', '眨眼', '惊讶', '吐舌', '害怕', '委屈', '不爽', '咬牙'];
+  /* 可访问名称必须包含舞台上可见的提示文字（axe: label-content-name-mismatch） */
+  var HINT = '点击头部可更换表情 左右拖拽转身 · AI 生成';
+
+  var vi = 0;      // 当前视角
+  var mi = 0;      // 当前表情
+  var mode = 'view';
+
+  function sync() {
+    stage.setAttribute(
+      'aria-label',
+      mode === 'view'
+        ? HINT + '，当前为' + VIEW_LABEL[vi]
+        : HINT + '，当前表情：' + MOOD_LABEL[mi]
+    );
+    /* 画面归 viewer3d.js 管：data-ready / data-mood 都由它来写 */
+  }
+
+  function fx(cls) {
+    if (reduceMotion || stage.classList.contains(cls)) return;
+    stage.classList.add(cls);
+    setTimeout(function () { stage.classList.remove(cls); }, 360);
+  }
+
+  /* 3D 挂了：画面上什么都不会变，点击也就别再改状态了 */
+  function dead3d() { return stage.getAttribute('data-state') === 'fail'; }
+
+  function turn(step) {
+    if (dead3d()) return;
+    mode = 'view';
+    vi = (vi + step + N_VIEWS) % N_VIEWS;
+    sync();
+    fx('turning');
+  }
+
+  function nextMood() {
+    if (dead3d()) return;
+    mi = mode === 'mood' ? (mi + 1) % N_MOODS : 0;
+    mode = 'mood';
+    sync();
+    fx('pop');
+    /* 通知 3D 查看器：有对应表情模型就换模型 */
+    try {
+      stage.dispatchEvent(new CustomEvent('buddymood', { detail: { index: mi } }));
+    } catch (err) { /* 忽略 */ }
+  }
+
+  function backToView() {
+    if (dead3d()) return;
+    mode = 'view';
+    vi = 0;
+    sync();
+    fx('turning');
+    /* 通知 3D 查看器：回正面了，把还没加载完的表情模型作废（index:-1） */
+    try {
+      stage.dispatchEvent(new CustomEvent('buddymood', { detail: { index: -1 } }));
+    } catch (err) { /* 忽略 */ }
+  }
+
+  /* ---------- 指针：拖拽转身 / 点击换表情 ---------- */
+  var dragging = false;
+  var moved = 0;
+  var lastX = 0;
+  var startX = 0;
+  var startY = 0;
+  var acc = 0;
+  var TH = 34;   // 每拖过 34px 转一格
+
+  stage.addEventListener('pointerdown', function (e) {
+    dragging = true;
+    moved = 0;
+    acc = 0;
+    lastX = startX = e.clientX;
+    startY = e.clientY;
+    try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+
+  stage.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - lastX;
+    lastX = e.clientX;
+    moved = Math.max(moved, Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY));
+    /* 3D 模式下旋转交给 viewer3d.js，这里只统计位移，免得拖拽被当成点击 */
+    if (stage.getAttribute('data-three') === 'on') return;
+    acc += dx;
+    // 向左拖 = 往前转（正面 → 侧面 → 背面），向右拖则相反
+    if (acc > TH) { acc = 0; turn(-1); }
+    else if (acc < -TH) { acc = 0; turn(1); }
+  });
+
+  stage.addEventListener('pointerup', function (e) {
+    if (!dragging) return;
+    dragging = false;
+    try { stage.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (moved > 8) return;                 // 拖拽已由 turn() 处理
+    var r = stage.getBoundingClientRect();
+    var y = (e.clientY - r.top) / r.height;
+    if (y < 0.55) nextMood();    // 点头部 → 换表情
+    else backToView();           // 点身体 → 回正面全身
+  });
+
+  stage.addEventListener('pointercancel', function () { dragging = false; });
+
+  /* ---------- 键盘操作 ---------- */
+  stage.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      /* 3D 模式：方向键转模型，由 viewer3d.js 处理 */
+      if (stage.getAttribute('data-three') === 'on') return;
+      e.preventDefault();
+      turn(e.key === 'ArrowLeft' ? -1 : 1);
+    } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      nextMood();
+    }
+  });
+
+  sync();
 })();

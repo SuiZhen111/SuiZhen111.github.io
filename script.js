@@ -535,7 +535,7 @@
   var N_MOODS = 8;     // 8 种表情
 
   var VIEW_LABEL = ['正面', '侧面', '背面'];
-  var MOOD_LABEL = ['大笑', '眨眼', '惊讶', '吐舌', '害怕', '委屈', '不爽', '咬牙'];
+  var MOOD_LABEL = ['微笑', '大笑', '开怀', '偷笑', '得意', '惊讶', '委屈', '不爽'];
   /* 可访问名称必须包含舞台上可见的提示文字（axe: label-content-name-mismatch） */
   var HINT = '点击头部可更换表情 左右拖拽转身 · AI 生成';
 

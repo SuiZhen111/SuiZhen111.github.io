@@ -12,26 +12,27 @@
 (function () {
   'use strict';
 
-  var MODEL_URL = 'images/avatar3d/model.glb';
-  /* 8 个表情模型（混元3D 按表情图生成，压缩后每个约 0.95MB，点到才加载）。
+  var VER = '?v=20260930a';   // 模型换代时同步升级，免得吃旧缓存
+  var MODEL_URL = 'images/avatar3d/model.glb' + VER;
+  /* 8 个表情模型（混元3D 按表情图生成的全身像，压缩后每个约 1.2MB，点到才加载）。
      挂上去只在脖子处换头（见 applyClip），加载失败就保持当前形象。 */
   var MOOD_MODELS = [
-    'images/avatar3d/mood-01.glb',
-    'images/avatar3d/mood-02.glb',
-    'images/avatar3d/mood-03.glb',
-    'images/avatar3d/mood-04.glb',
-    'images/avatar3d/mood-05.glb',
-    'images/avatar3d/mood-06.glb',
-    'images/avatar3d/mood-07.glb',
-    'images/avatar3d/mood-08.glb'
+    'images/avatar3d/mood-01.glb' + VER,
+    'images/avatar3d/mood-02.glb' + VER,
+    'images/avatar3d/mood-03.glb' + VER,
+    'images/avatar3d/mood-04.glb' + VER,
+    'images/avatar3d/mood-05.glb' + VER,
+    'images/avatar3d/mood-06.glb' + VER,
+    'images/avatar3d/mood-07.glb' + VER,
+    'images/avatar3d/mood-08.glb' + VER
   ];
-  var MOOD_LABEL = ['大笑', '眨眼', '惊讶', '吐舌', '害怕', '委屈', '不爽', '咬牙'];
+  var MOOD_LABEL = ['微笑', '大笑', '开怀', '偷笑', '得意', '惊讶', '委屈', '不爽'];
 
-  /* 表情模型是胸像、全身模型是全身像：按“头一样大 + 头顶对齐”换算，
+  /* 表情模型和身体都是全身像：按“头一样大 + 头顶对齐”换算，
      再在脖子处把两件裁开对接 —— 身体一直是全身模型，换表情只换头，
      取景、缩放都不受影响，换完表情随时能看到全身。 */
   var BASE_HEAD = 0.1845;   // 全身模型实测：头高 ≈ 身高 × 0.1845
-  var MOOD_HEAD = 0.557;    // 表情胸像实测：头高 ≈ 胸像高 × 0.557
+  var MOOD_HEAD = 0.1845;   // 表情模型同为全身像：头高 ≈ 身高 × 0.1845
   var NECK_CUT = 0.90;      // 脖子对接切口（世界坐标 y）：全身留切口以下、表情留以上
   /* 基准取景：胸口往上的半身特写；换表情不改取景，脸的位置本来就不动 */
   var FOCUS_CHEST = 0.9077; // 基准取景：焦点 = 身高 × 0.9077
@@ -52,7 +53,7 @@
 
   if (!buddyStage && !heroStage) return;
 
-  var NOTE_OK = '模型由混元3D 生成 · 约 0.9MB · 进入页面后才加载';
+  var NOTE_OK = '模型由混元3D 生成 · 约 1.2MB · 进入页面后才加载';
   var NOTE_FAIL = '3D 暂不可用 · 这里需要浏览器支持 WebGL';
 
   var reduceMotion = !!(window.matchMedia &&
@@ -139,7 +140,7 @@
   }
 
   /* 3D 是增强不是刚需：先让页面把 load 走完，再挑浏览器空闲时加载，
-     免得 three.js 和 0.9MB 模型跟首屏抢主线程和带宽。 */
+     免得 three.js 和 1.2MB 模型跟首屏抢主线程和带宽。 */
   var booted = false;
   function scheduleBoot() {
     if (booted) return;
@@ -269,6 +270,7 @@
       moodHolder: null,    // 表情头模型（挂着表情时才有）
       clipBelow: null, clipAbove: null,   // 脖子对接用的两个裁切面
       modelH: 0,          // 首个模型定基准，后续表情模型对齐同一高度
+      cutC: null,         // 身体在脖子切口处的截面圆心（表情模型来对齐它）
       viewH: 1.4,
       viewHTo: 1.4,       // 目标视野高（取景平滑过渡用）
       needW: 0.5,
@@ -285,8 +287,62 @@
     };
   }
 
+  /* 脖子切口截面的圆心：把网格与平面 y = NECK_CUT 求交，累加所有交线段，
+     取“长度加权中点”（折线的一阶矩，不受网格疏密影响）。
+     身体和表情是各自独立生成的，光按 bbox 居中 + 头顶对齐，脖子仍会错开
+     几毫米到 1 厘米（实测最大 1.17cm），接缝就有台阶；
+     再拿这个圆心把表情模型平移一次，两边的切口边缘就严丝合缝了。 */
+  function cutCenter(st, root) {
+    var THREE = st.THREE;
+    var a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+    var sumX = 0, sumZ = 0, sumL = 0;
+    root.updateMatrixWorld(true);
+    root.traverse(function (o) {
+      if (!o.isMesh || !o.geometry) return;
+      var attr = o.geometry.getAttribute('position');
+      if (!attr) return;
+      var idx = o.geometry.getIndex();
+      var n = idx ? idx.count : attr.count;
+      var mw = o.matrixWorld;
+      for (var i = 0; i + 2 < n; i += 3) {
+        a.fromBufferAttribute(attr, idx ? idx.getX(i) : i).applyMatrix4(mw);
+        b.fromBufferAttribute(attr, idx ? idx.getX(i + 1) : i + 1).applyMatrix4(mw);
+        c.fromBufferAttribute(attr, idx ? idx.getX(i + 2) : i + 2).applyMatrix4(mw);
+        var d0 = a.y - NECK_CUT, d1 = b.y - NECK_CUT, d2 = c.y - NECK_CUT;
+        var up = (d0 > 0 ? 1 : 0) + (d1 > 0 ? 1 : 0) + (d2 > 0 ? 1 : 0);
+        if (up === 0 || up === 3) continue;             // 整个三角形在切口同一侧
+        /* 独立的那个顶点，和另外两个顶点各连一条交线 → 一段截面 */
+        var lone, o1, o2, dl, e1, e2;
+        if (up === 1) {
+          lone = d0 > 0 ? a : (d1 > 0 ? b : c);
+          dl = d0 > 0 ? d0 : (d1 > 0 ? d1 : d2);
+          if (d0 > 0) { o1 = b; e1 = d1; o2 = c; e2 = d2; }
+          else if (d1 > 0) { o1 = a; e1 = d0; o2 = c; e2 = d2; }
+          else { o1 = a; e1 = d0; o2 = b; e2 = d1; }
+        } else {
+          lone = d0 <= 0 ? a : (d1 <= 0 ? b : c);
+          dl = d0 <= 0 ? d0 : (d1 <= 0 ? d1 : d2);
+          if (d0 <= 0) { o1 = b; e1 = d1; o2 = c; e2 = d2; }
+          else if (d1 <= 0) { o1 = a; e1 = d0; o2 = c; e2 = d2; }
+          else { o1 = a; e1 = d0; o2 = b; e2 = d1; }
+        }
+        var t1 = dl / (dl - e1), t2 = dl / (dl - e2);
+        if (!isFinite(t1) || !isFinite(t2)) continue;
+        var p1x = lone.x + t1 * (o1.x - lone.x), p1z = lone.z + t1 * (o1.z - lone.z);
+        var p2x = lone.x + t2 * (o2.x - lone.x), p2z = lone.z + t2 * (o2.z - lone.z);
+        var ex = p2x - p1x, ez = p2z - p1z;
+        var len = Math.sqrt(ex * ex + ez * ez);
+        if (!(len > 0)) continue;
+        sumX += (p1x + p2x) * 0.5 * len;
+        sumZ += (p1z + p2z) * 0.5 * len;
+        sumL += len;
+      }
+    });
+    return sumL > 0 ? { x: sumX / sumL, z: sumZ / sumL } : null;
+  }
+
   /* 统一落地 + 居中 + 统一高度，表情模型之间不跳画面。
-     mood=true 表示这是表情胸像：头顶对齐全身模型头顶、头部等大，
+     mood=true 表示这是表情模型：头顶对齐全身模型头顶、头部等大，
      挂上去只换头（配合 applyClip 在脖子处对接），取景完全不动。 */
   function normalize(st, obj, mood) {
     var THREE = st.THREE;
@@ -302,7 +358,7 @@
     var s, oy;
 
     if (mood) {
-      /* 表情胸像只负责“换头”：只做等大 + 头顶对齐，
+      /* 表情模型只负责“换头”：只做等大 + 头顶对齐，
          取景、宽度、缩放一律沿用全身那套，画面不许有任何变化 */
       s = (st.modelH * BASE_HEAD) / (size.y * MOOD_HEAD);
       oy = st.modelH - box.max.y * s;                 // 头顶与全身模型对齐
@@ -319,6 +375,21 @@
 
     holder.scale.setScalar(s);
     holder.position.set(-center.x * s, oy, -center.z * s);
+
+    /* 接缝圆心校正：身体先量好切口圆心，表情模型按它平移，
+       两件的切口边缘才对得上（不改取景、不改缩放，只微调水平位置） */
+    holder.updateMatrixWorld(true);
+    var cut = cutCenter(st, holder);
+    if (cut) {
+      if (mood) {
+        if (st.cutC) {
+          holder.position.x += st.cutC.x - cut.x;
+          holder.position.z += st.cutC.z - cut.z;
+        }
+      } else {
+        st.cutC = cut;
+      }
+    }
     st.isMood = !!mood;
 
     if (!st.ready) {                                  // 首次建台直接就位，不做过渡

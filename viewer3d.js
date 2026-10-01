@@ -4,7 +4,8 @@
    · 页面空闲后再动态加载 three.js，不阻塞首屏
    · 侧栏小舞台 + 正文大舞台共用一次模型下载，各自解析一份
    · 默认取景为“胸部以上”的半身特写，表情看得清楚
-   · 换表情 = 在脖子处“换头”：身体始终是全身模型，取景和缩放都不变，
+   · 换表情 = 换掉整个模型：8 个表情模型和身体一样都是完整的全身像，
+     直接整模替换，不拼接就没有接缝；摆位一致，取景和缩放都不变，
      所以换完表情照样能看到全身，也能继续放大缩小
    · 交互：拖拽旋转（带惯性）、空闲自转、滚轮 / 双指捏合缩放
    · 没有 WebGL / 下载失败 → 只用文字提示，不再放静态图兜底
@@ -15,7 +16,7 @@
   var VER = '?v=20260930a';   // 模型换代时同步升级，免得吃旧缓存
   var MODEL_URL = 'images/avatar3d/model.glb' + VER;
   /* 8 个表情模型（混元3D 按表情图生成的全身像，压缩后每个约 1.2MB，点到才加载）。
-     挂上去只在脖子处换头（见 applyClip），加载失败就保持当前形象。 */
+     挂上去 = 整模替换（见 swapMood），加载失败就保持当前形象。 */
   var MOOD_MODELS = [
     'images/avatar3d/mood-01.glb' + VER,
     'images/avatar3d/mood-02.glb' + VER,
@@ -28,12 +29,10 @@
   ];
   var MOOD_LABEL = ['微笑', '大笑', '开怀', '偷笑', '得意', '惊讶', '委屈', '不爽'];
 
-  /* 表情模型和身体都是全身像：按“头一样大 + 头顶对齐”换算，
-     再在脖子处把两件裁开对接 —— 身体一直是全身模型，换表情只换头，
-     取景、缩放都不受影响，换完表情随时能看到全身。 */
-  var BASE_HEAD = 0.1845;   // 全身模型实测：头高 ≈ 身高 × 0.1845
-  var MOOD_HEAD = 0.1845;   // 表情模型同为全身像：头高 ≈ 身高 × 0.1845
-  var NECK_CUT = 0.90;      // 脖子对接切口（世界坐标 y）：全身留切口以下、表情留以上
+  /* 表情模型和身体是各自独立生成的两张“照片”，但都是同一角色的完整全身像，
+     所以换表情不搞“脖子处换头”的拼接 —— 整个模型直接换掉：
+     拼接才需要对齐和裁切（必然留接缝），整模替换没有拼缝，
+     两件又用同一套 normalize 落地、居中、等高，取景缩放自然不动。 */
   /* 基准取景：胸口往上的半身特写；换表情不改取景，脸的位置本来就不动 */
   var FOCUS_CHEST = 0.9077; // 基准取景：焦点 = 身高 × 0.9077
   var FOCUS_FULL = 0.5;     // 缩到最远时焦点落到身高 × 0.5（身体正中 → 完整全身）
@@ -237,8 +236,6 @@
     renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
-    /* 脖子处对接要靠裁切面（见 applyClip） */
-    renderer.localClippingEnabled = true;
 
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(30, 1, 0.05, 80);
@@ -266,17 +263,15 @@
       scene: scene,
       camera: camera,
       pivot: pivot,
-      holder: null,        // 全身模型（一直在场）
-      moodHolder: null,    // 表情头模型（挂着表情时才有）
-      clipBelow: null, clipAbove: null,   // 脖子对接用的两个裁切面
+      holder: null,        // 身体模型（默认在场）
+      moodHolder: null,    // 表情模型（挂着表情时才在场，和身体二选一显示）
       modelH: 0,          // 首个模型定基准，后续表情模型对齐同一高度
-      cutC: null,         // 身体在脖子切口处的截面圆心（表情模型来对齐它）
       viewH: 1.4,
       viewHTo: 1.4,       // 目标视野高（取景平滑过渡用）
       needW: 0.5,
       focus: new THREE.Vector3(0, 0.6, 0),
       focusTo: new THREE.Vector3(0, 0.6, 0),
-      isMood: false,      // 是否挂着表情头（身体始终是全身模型）
+      isMood: false,      // 是否正显示表情模型（整模替换，二选一）
       moodIndex: -1,      // 正在显示第几个表情（-1 = 全身正面）
       az: 0.1, el: 0.05, zoom: 1, dist: 3,
       busy: 0,            // 正在换表情模型：暂停本舞台渲染，给解析让路
@@ -287,64 +282,9 @@
     };
   }
 
-  /* 脖子切口截面的圆心：把网格与平面 y = NECK_CUT 求交，累加所有交线段，
-     取“长度加权中点”（折线的一阶矩，不受网格疏密影响）。
-     身体和表情是各自独立生成的，光按 bbox 居中 + 头顶对齐，脖子仍会错开
-     几毫米到 1 厘米（实测最大 1.17cm），接缝就有台阶；
-     再拿这个圆心把表情模型平移一次，两边的切口边缘就严丝合缝了。 */
-  function cutCenter(st, root) {
-    var THREE = st.THREE;
-    var a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
-    var sumX = 0, sumZ = 0, sumL = 0;
-    root.updateMatrixWorld(true);
-    root.traverse(function (o) {
-      if (!o.isMesh || !o.geometry) return;
-      var attr = o.geometry.getAttribute('position');
-      if (!attr) return;
-      var idx = o.geometry.getIndex();
-      var n = idx ? idx.count : attr.count;
-      var mw = o.matrixWorld;
-      for (var i = 0; i + 2 < n; i += 3) {
-        a.fromBufferAttribute(attr, idx ? idx.getX(i) : i).applyMatrix4(mw);
-        b.fromBufferAttribute(attr, idx ? idx.getX(i + 1) : i + 1).applyMatrix4(mw);
-        c.fromBufferAttribute(attr, idx ? idx.getX(i + 2) : i + 2).applyMatrix4(mw);
-        var d0 = a.y - NECK_CUT, d1 = b.y - NECK_CUT, d2 = c.y - NECK_CUT;
-        var up = (d0 > 0 ? 1 : 0) + (d1 > 0 ? 1 : 0) + (d2 > 0 ? 1 : 0);
-        if (up === 0 || up === 3) continue;             // 整个三角形在切口同一侧
-        /* 独立的那个顶点，和另外两个顶点各连一条交线 → 一段截面 */
-        var lone, o1, o2, dl, e1, e2;
-        if (up === 1) {
-          lone = d0 > 0 ? a : (d1 > 0 ? b : c);
-          dl = d0 > 0 ? d0 : (d1 > 0 ? d1 : d2);
-          if (d0 > 0) { o1 = b; e1 = d1; o2 = c; e2 = d2; }
-          else if (d1 > 0) { o1 = a; e1 = d0; o2 = c; e2 = d2; }
-          else { o1 = a; e1 = d0; o2 = b; e2 = d1; }
-        } else {
-          lone = d0 <= 0 ? a : (d1 <= 0 ? b : c);
-          dl = d0 <= 0 ? d0 : (d1 <= 0 ? d1 : d2);
-          if (d0 <= 0) { o1 = b; e1 = d1; o2 = c; e2 = d2; }
-          else if (d1 <= 0) { o1 = a; e1 = d0; o2 = c; e2 = d2; }
-          else { o1 = a; e1 = d0; o2 = b; e2 = d1; }
-        }
-        var t1 = dl / (dl - e1), t2 = dl / (dl - e2);
-        if (!isFinite(t1) || !isFinite(t2)) continue;
-        var p1x = lone.x + t1 * (o1.x - lone.x), p1z = lone.z + t1 * (o1.z - lone.z);
-        var p2x = lone.x + t2 * (o2.x - lone.x), p2z = lone.z + t2 * (o2.z - lone.z);
-        var ex = p2x - p1x, ez = p2z - p1z;
-        var len = Math.sqrt(ex * ex + ez * ez);
-        if (!(len > 0)) continue;
-        sumX += (p1x + p2x) * 0.5 * len;
-        sumZ += (p1z + p2z) * 0.5 * len;
-        sumL += len;
-      }
-    });
-    return sumL > 0 ? { x: sumX / sumL, z: sumZ / sumL } : null;
-  }
-
-  /* 统一落地 + 居中 + 统一高度，表情模型之间不跳画面。
-     mood=true 表示这是表情模型：头顶对齐全身模型头顶、头部等大，
-     挂上去只换头（配合 applyClip 在脖子处对接），取景完全不动。 */
-  function normalize(st, obj, mood) {
+  /* 统一落地 + 居中 + 统一高度：身体和表情模型都走这一套，
+     两件摆位完全一致，整模替换时画面不跳、取景不动。 */
+  function normalize(st, obj) {
     var THREE = st.THREE;
     var holder = new THREE.Group();
     holder.add(obj);
@@ -355,42 +295,18 @@
     if (!(size.y > 0)) throw new Error('模型尺寸异常');
 
     if (!st.modelH) st.modelH = size.y;
-    var s, oy;
+    var s = st.modelH / size.y;                       // 表情模型和身体等高
+    var oy = -box.min.y * s;                          // 落地
 
-    if (mood) {
-      /* 表情模型只负责“换头”：只做等大 + 头顶对齐，
-         取景、宽度、缩放一律沿用全身那套，画面不许有任何变化 */
-      s = (st.modelH * BASE_HEAD) / (size.y * MOOD_HEAD);
-      oy = st.modelH - box.max.y * s;                 // 头顶与全身模型对齐
-    } else {
-      s = st.modelH / size.y;
-      oy = -box.min.y * s;                            // 落地
-      /* 基准取景：胸部以上的半身特写，两个舞台一致；
-         换表情不改这套取景，脸和身体都不会动。
-         needW 只留一点余量——窄画布时宁可让肩膀贴边，也别把纵向取景拉宽 */
-      st.focusTo.set(0, st.modelH * FOCUS_CHEST, 0);
-      st.viewHTo = st.modelH * VIEWH_CHEST;
-      st.needW = Math.max(size.x, size.z) * s * 1.15;
-    }
+    /* 基准取景：胸口往上的半身特写，两个舞台一致；
+       换表情时重算出来还是这几个值（同一角色、同一摆位），画面纹丝不动。
+       needW 只留一点余量——窄画布时宁可让肩膀贴边，也别把纵向取景拉宽 */
+    st.focusTo.set(0, st.modelH * FOCUS_CHEST, 0);
+    st.viewHTo = st.modelH * VIEWH_CHEST;
+    st.needW = Math.max(size.x, size.z) * s * 1.15;
 
     holder.scale.setScalar(s);
     holder.position.set(-center.x * s, oy, -center.z * s);
-
-    /* 接缝圆心校正：身体先量好切口圆心，表情模型按它平移，
-       两件的切口边缘才对得上（不改取景、不改缩放，只微调水平位置） */
-    holder.updateMatrixWorld(true);
-    var cut = cutCenter(st, holder);
-    if (cut) {
-      if (mood) {
-        if (st.cutC) {
-          holder.position.x += st.cutC.x - cut.x;
-          holder.position.z += st.cutC.z - cut.z;
-        }
-      } else {
-        st.cutC = cut;
-      }
-    }
-    st.isMood = !!mood;
 
     if (!st.ready) {                                  // 首次建台直接就位，不做过渡
       st.focus.copy(st.focusTo);
@@ -426,7 +342,7 @@
   }
 
   /* 缩放统一走这里：数值越小离得越近。
-     换表情只是在脖子处换头，身体和取景都没动，
+     换表情是整模替换，身体和取景都没动，
      所以表情状态下缩放规则完全一样：缩到最远照样是完整全身（表情还在脸上）。 */
   function setZoom(st, z) {
     st.zoom = clamp(z, ZOOM_MIN, ZOOM_MAX);
@@ -636,7 +552,7 @@
   /* 让在途的表情模型切换作废：用户已经改主意了，旧的别再落地 */
   function bumpSeq(st) { if (st) st.swapSeq = (st.swapSeq || 0) + 1; }
 
-  /* ---------------- 表情（脖子处换头，身体不动） ---------------- */
+  /* ---------------- 表情（整模替换，不拼接所以没有接缝） ---------------- */
   function findStage(host) {
     for (var i = 0; i < stages.length; i++) {
       if (stages[i].host === host) return stages[i];
@@ -644,7 +560,8 @@
     return null;
   }
 
-  /* 载入一个表情模型挂上去：全身模型一直在场，只把它的头换成表情头 */
+  /* 载入一个表情模型挂上去：它是完整的全身像，整个模型换掉，
+     身体那件先藏起来（回正面再拿回来），所以两件从不拼在一起 */
   function swapMood(st, url, onOk, onFail) {
     /* 顺序号：连点两个表情时，只认最后一次切换 */
     var seq = (st.swapSeq = (st.swapSeq || 0) + 1);
@@ -663,15 +580,15 @@
     }).then(function (scene) {
       if (seq !== st.swapSeq) { settle(); return; }   // 已被更新的一次切换取代
       if (!scene) throw new Error('表情模型为空');
-      var holder = normalize(st, scene, true);
-      if (st.moodHolder) {                            // 换过表情：丢掉上一个头
+      var holder = normalize(st, scene);
+      if (st.moodHolder) {                            // 换过表情：丢掉上一个
         st.pivot.remove(st.moodHolder);
         disposeObj(st.moodHolder);
       }
       st.moodHolder = holder;
       st.pivot.add(holder);
       st.isMood = true;
-      applyClip(st);                                  // 脖子处对接
+      showModel(st);                                  // 表情整模上场，身体让位
       settle();
       resize(st);
       updateCamera(st);
@@ -684,7 +601,7 @@
     });
   }
 
-  /* 摘掉表情头回到正面：全身模型本来就没动过，取消裁切即可，
+  /* 摘掉表情回到正面：把表情模型丢掉、身体显示出来即可，
      取景、缩放、旋转状态全部原样保留 */
   function restoreBase(st) {
     bumpSeq(st);                                // 在途的表情加载一并作废
@@ -694,41 +611,23 @@
       st.moodHolder = null;
     }
     st.isMood = false;
-    applyClip(st);
+    showModel(st);
     if (st.ready) {
       updateCamera(st);
       st.renderer.render(st.scene, st.camera);
     }
   }
 
-  /* 脖子处对接：全身模型只留切口以下，表情模型只留切口以上。
-     两件在脖子处拼上（切口正好藏在连帽领口里），
-     于是身体、取景、缩放都不用动，换表情时全身始终可见。 */
-  function applyClip(st) {
-    var THREE = st.THREE;
-    if (!st.clipBelow) {
-      st.clipBelow = new THREE.Plane(new THREE.Vector3(0, -1, 0), NECK_CUT);
-      st.clipAbove = new THREE.Plane(new THREE.Vector3(0, 1, 0), -NECK_CUT);
-    }
-    clipRoot(st.holder, st.isMood ? st.clipBelow : null);
-    clipRoot(st.moodHolder, st.clipAbove);
-
-    function clipRoot(root, plane) {
-      if (!root) return;
-      root.traverse(function (o) {
-        if (!o.isMesh || !o.material) return;
-        var mats = Array.isArray(o.material) ? o.material : [o.material];
-        for (var i = 0; i < mats.length; i++) {
-          mats[i].clippingPlanes = plane ? [plane] : null;
-          mats[i].needsUpdate = true;
-        }
-      });
-    }
+  /* 显示哪一件：挂着表情就显示表情模型、藏起身体，回正面反过来。
+     两件都是完整模型，只是显隐切换 —— 没有裁切、没有拼接，也就没有接缝。 */
+  function showModel(st) {
+    if (st.moodHolder) st.moodHolder.visible = st.isMood;
+    if (st.holder) st.holder.visible = !st.isMood;
   }
 
   function bindMoodProtocol() {
-    /* 侧栏：script.js 换表情时广播过来，有表情模型就换头；
-       index:-1 = 点身体回正，摘掉表情头 */
+    /* 侧栏：script.js 换表情时广播过来，有表情模型就整模换上；
+       index:-1 = 点身体回正，换回身体那件 */
     if (buddyStage) {
       buddyStage.addEventListener('buddymood', function (e) {
         var i = (e && e.detail && e.detail.index) | 0;
@@ -736,7 +635,7 @@
         bumpSeq(st);                          // 这次意图优先，作废在途切换
         if (!st) return;
 
-        if (i < 0) {                          /* 回正面全身：摘掉表情头 */
+        if (i < 0) {                          /* 回正面全身：换回身体那件 */
           restoreBase(st);
           buddyStage.setAttribute('data-mood', '');
           return;
@@ -812,7 +711,7 @@
     if (st) st.moodIndex = -1;
     clearMoodButtons();
     setStatus('3D 已就绪 · 拖拽旋转 · 滚轮缩放', 'ok');
-    /* 正挂着表情头 → 摘掉；身体和取景本来就没动过，画面只是脸换回来 */
+    /* 正挂着表情 → 换回身体那件；取景和旋转本来就没动过，画面只是脸换回来 */
     if (st && st.isMood) restoreBase(st);
   }
 

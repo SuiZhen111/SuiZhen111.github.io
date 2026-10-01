@@ -202,6 +202,16 @@
           var obj = (gltf && (gltf.scene || (gltf.scenes && gltf.scenes[0]))) || null;
           if (!obj) throw new Error('模型内容为空');
           st.holder = normalize(st, obj);
+          /* 材质修正：GLB 里 metallic=1 且场景无环境贴图时，金属材质会把
+             眼镜/深色区域渲染成全黑。改为介电材质，让漫反射贴图正常显示。 */
+          st.holder.traverse(function (n) {
+            if (n.isMesh && n.material) {
+              (Array.isArray(n.material) ? n.material : [n.material]).forEach(function (m) {
+                if ('metalness' in m) m.metalness = 0.05;
+                if ('roughness' in m) m.roughness = 0.62;
+              });
+            }
+          });
           st.pivot.add(st.holder);
           resize(st);
           updateCamera(st);
@@ -476,8 +486,8 @@
       st.lastT = now;
 
       st.moved += Math.abs(dx) + Math.abs(dy);
-      st.az -= dx * 0.008;                                  // 向右拖 = 正面往右转
-      st.el = clamp(st.el + dy * 0.005, -0.3, 0.5);
+      st.az -= dx * 0.008;                                  // 向右拖 = 正面往右转（360° 无限制）
+      st.el = clamp(st.el + dy * 0.005, -1.05, 1.05);       // 上下视角大幅放宽（±60°）
 
       var inst = clamp((-dx * 0.008) / dt, -8, 8);
       st.vel = st.vel * 0.55 + inst * 0.45;

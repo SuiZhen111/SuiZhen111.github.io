@@ -4,18 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>邰穗江 · 个人主页</title>
-  <meta name="description" content="邰穗江的个人网站——广西职业师范学院物联网专业在读，热爱编程与硬件，正在向嵌入式方向发展。">
+  <meta name="description" content="邰穗江的个人网站——广西职业师范学院物联网工程专业在读，专注嵌入式软硬件，12 项竞赛荣誉、16 张证书，课余练中长跑。">
   <meta property="og:type" content="website">
   <meta property="og:title" content="邰穗江 · 个人主页">
-  <meta property="og:description" content="物联网专业在读，热爱编程与硬件，正在向嵌入式方向发展。12 项竞赛荣誉 · 16 张证书。">
+  <meta property="og:description" content="物联网工程专业在读，专注嵌入式软硬件。12 项竞赛荣誉 · 16 张证书 · 中长跑 800m 2:10 / 1500m 4:38。">
   <meta property="og:url" content="https://suizhen111.github.io/">
   <meta property="og:image" content="https://suizhen111.github.io/images/og-banner.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="邰穗江 · 个人主页">
-  <meta name="twitter:description" content="物联网专业在读，热爱编程与硬件，正在向嵌入式方向发展。">
+  <meta name="twitter:description" content="物联网工程专业在读，专注嵌入式软硬件，正在向嵌入式方向一路小跑。">
   <meta name="twitter:image" content="https://suizhen111.github.io/images/og-banner.jpg">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
-  <link rel="stylesheet" href="style.css?v=20260928b">
+  <link rel="stylesheet" href="style.css?v=20260929c">
+
+  <!-- three.js 裸模块名映射（3D 数字人用；老浏览器会自动跳过 3D，只显示文字说明） -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/build/three.module.min.js"
+      }
+    }
+  </script>
 </head>
 <body>
 
@@ -27,45 +36,78 @@
     <!-- ============ 左侧固定信息栏 ============ -->
     <aside class="sidebar">
       <div class="side-top">
-        <div class="avatar-box">
-          <canvas class="rings-canvas" aria-hidden="true"></canvas>
-          <img class="side-avatar" src="images/avatar.jpg" alt="邰穗江的照片" width="140" height="140">
+        <div class="avatar-row">
+          <div class="avatar-box">
+            <canvas class="rings-canvas" aria-hidden="true"></canvas>
+            <img class="side-avatar" src="images/avatar.jpg" alt="邰穗江的照片" width="140" height="140">
+          </div>
+
+          <!-- 3D 数字人：左右拖拽转身，点击头部更换表情 -->
+          <figure class="buddy" id="buddy">
+            <div class="buddy-stage" id="buddyStage" role="button" tabindex="0"
+                 aria-label="点击头部可更换表情 左右拖拽转身 · AI 生成，当前为正面">
+              <span class="buddy-fail" id="buddyFail">3D 加载中…</span>
+              <canvas class="buddy-canvas" id="buddyCanvas" aria-hidden="true"></canvas>
+              <span class="buddy-hint"><b>点击头部可更换表情</b> 左右拖拽转身 · AI 生成</span>
+            </div>
+            <button class="buddy-chat" id="buddyChat" type="button"
+                    aria-controls="assistant" aria-expanded="false" aria-label="向数字助手提问">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12a8 8 0 0 1-8 8H7l-4 3V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/>
+              </svg>
+            </button>
+          </figure>
         </div>
         <h1 class="side-name">邰穗江</h1>
-        <p class="side-role">物联网专业在读</p>
+        <p class="side-role">物联网工程专业在读</p>
         <p class="side-blurb">
-          来自贵州台江，现就读于广西职业师范学院计算机与信息工程学院。
-          热爱编程与硬件，正在向嵌入式开发一路小跑。
+          贵州台江人，现在广西南宁读书。左手写代码，右手焊电路，
+          正在嵌入式这条路上一路小跑。
         </p>
 
         <nav class="side-nav" id="sideNav" aria-label="页面导航">
           <a href="#about"><span class="dash"></span>关于我</a>
           <a href="#directions"><span class="dash"></span>探索方向</a>
-          <a href="#digital-human"><span class="dash"></span>数字分身</a>
+          <a href="#skills"><span class="dash"></span>技能栈</a>
           <a href="#awards"><span class="dash"></span>竞赛荣誉</a>
-          <a href="#roles"><span class="dash"></span>学生工作</a>
           <a href="#certs"><span class="dash"></span>证书展示</a>
+          <a href="#roles"><span class="dash"></span>学生工作</a>
+          <a href="#running"><span class="dash"></span>跑步训练</a>
           <a href="#contact"><span class="dash"></span>联系</a>
         </nav>
       </div>
 
-      <ul class="side-social">
-        <li>
-          <a href="https://github.com/SuiZhen111" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub">
-            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
-          </a>
-        </li>
-        <li>
-          <a href="mailto:2759342832@qq.com" aria-label="邮箱" title="2759342832@qq.com">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6L22 7"/></svg>
-          </a>
-        </li>
-        <li>
-          <a href="#contact" aria-label="跑步交流" title="约跑交流">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="15" cy="4.5" r="2"/><path d="m12.5 21 1.5-5-3.5-3 1-5.5L8 10l-2.5 1"/><path d="M13.5 7.5 17 9l2 2.5"/><path d="m10.5 13 3 2.5-1 5.5"/></svg>
-          </a>
-        </li>
-      </ul>
+      <div class="side-bottom">
+        <div class="side-stats" aria-label="关键数字">
+          <div class="side-stat"><strong>12</strong><span>项荣誉</span></div>
+          <div class="side-stat"><strong>16</strong><span>张证书</span></div>
+          <div class="side-stat"><strong>2</strong><span>项大创</span></div>
+        </div>
+
+        <ul class="side-social">
+          <li>
+            <a href="https://github.com/SuiZhen111" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub">
+              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="mailto:2759342832@qq.com" aria-label="邮箱" title="2759342832@qq.com">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6L22 7"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="tel:18084524692" aria-label="联系电话" title="18084524692">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </a>
+          </li>
+          <li>
+            <a href="#running" aria-label="跑步交流" title="约跑交流">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="15" cy="4.5" r="2"/><path d="m12.5 21 1.5-5-3.5-3 1-5.5L8 10l-2.5 1"/><path d="M13.5 7.5 17 9l2 2.5"/><path d="m10.5 13 3 2.5-1 5.5"/></svg>
+            </a>
+          </li>
+        </ul>
+      </div>
     </aside>
 
     <!-- ============ 右侧滚动内容 ============ -->
@@ -81,17 +123,18 @@
         <div class="about-grid">
           <div class="prose reveal">
             <p>
-              我是<strong>邰穗江</strong>，19 岁，来自贵州省黔东南州台江县，
-              目前是<strong>广西职业师范学院 计算机与信息工程学院</strong>物联网专业的大二学生。
+              我是<strong>邰穗江</strong>，19 岁，来自贵州省黔东南苗族侗族自治州台江县。
+              现在是<strong>广西职业师范学院 计算机与信息工程学院</strong>物联网工程专业的大二学生。
             </p>
             <p>
-              我对<strong>编程</strong>和<strong>硬件</strong>都充满兴趣，正在向<strong>嵌入式方向</strong>发展。
-              嵌入式软件还是嵌入式硬件？说实话我还没想好——所以我打算两条路都去试一试，
-              在动手做项目的过程中，找到自己真正热爱的那条。
+              我对<strong>编程</strong>和<strong>硬件</strong>同样着迷，正朝着<strong>嵌入式方向</strong>走。
+              嵌入式软件还是嵌入式硬件？我暂时没下结论——两条路都想亲手走一遍，
+              用一个个做出来的项目，找到真正愿意长期投入的那一条。
             </p>
             <p>
               课堂之外，我在跑步爱好者协会带训练，在物联网电子技术协会做技术，
-              也在一次次竞赛里打磨自己。课余坚持跑步，也让我相信：技术和成长一样，靠的是日复一日的积累。
+              也在一场场比赛里打磨自己。课余的中长跑我一直没断，
+              它让我相信：<strong>技术与体能一样，靠的都是日复一日的积累</strong>。
             </p>
           </div>
 
@@ -100,11 +143,55 @@
               <div><dt>家乡</dt><dd>贵州省黔东南州台江县</dd></div>
               <div><dt>学校</dt><dd>广西职业师范学院</dd></div>
               <div><dt>学院</dt><dd>计算机与信息工程学院</dd></div>
-              <div><dt>专业</dt><dd>物联网专业 · 大二</dd></div>
+              <div><dt>专业</dt><dd>物联网工程专业 · 大二</dd></div>
               <div><dt>兴趣</dt><dd>编程 · 硬件 · 中长跑</dd></div>
               <div><dt>方向</dt><dd>嵌入式开发（探索中）</dd></div>
             </dl>
           </aside>
+        </div>
+
+        <!-- 3D 数字人 · 正文大展示（半身特写，可旋转 / 缩放 / 换表情 / 提问） -->
+        <div class="hero3d reveal" id="hero3d">
+          <div class="h3d-stage" id="h3dStage" role="img"
+               aria-label="邰穗江的 3D 数字人，左右拖拽可以自由旋转查看">
+            <canvas class="h3d-canvas" id="h3dCanvas" aria-hidden="true"></canvas>
+            <div class="h3d-bubble" id="h3dBubble" aria-hidden="true"></div>
+          </div>
+          <span class="h3d-status" id="h3dStatus" aria-live="polite"></span>
+
+          <div class="h3d-side">
+            <p class="h3d-kicker">3D 形象</p>
+            <p class="h3d-text">
+              这是<strong>腾讯混元3D</strong>照着我的形象生成的三维模型，半身特写，表情看得清楚。
+              <strong>左右拖拽自由旋转</strong>，<strong>滚轮或双指捏合放大缩小</strong>；
+              有问题就点「向我提问」，我按自己的资料回答。
+            </p>
+
+            <p class="h3d-sub">8 种表情（点一下就换）</p>
+            <ul class="h3d-moods" id="h3dMoods">
+              <li><button class="h3d-thumb" type="button" data-mood="0" aria-pressed="false">微笑</button></li>
+              <li><button class="h3d-thumb" type="button" data-mood="1" aria-pressed="false">大笑</button></li>
+              <li><button class="h3d-thumb" type="button" data-mood="2" aria-pressed="false">开怀</button></li>
+              <li><button class="h3d-thumb" type="button" data-mood="3" aria-pressed="false">偷笑</button></li>
+              <li><button class="h3d-thumb" type="button" data-mood="4" aria-pressed="false">得意</button></li>
+              <li><button class="h3d-thumb" type="button" data-mood="5" aria-pressed="false">惊讶</button></li>
+              <li><button class="h3d-thumb" type="button" data-mood="6" aria-pressed="false">委屈</button></li>
+              <li><button class="h3d-thumb" type="button" data-mood="7" aria-pressed="false">不爽</button></li>
+            </ul>
+
+            <div class="h3d-acts">
+              <button class="h3d-rot" id="h3dRot" type="button">⟳ 转一下</button>
+              <span class="h3d-zoom" role="group" aria-label="缩放模型">
+                <button id="h3dZoomOut" type="button" aria-label="缩小模型">−</button>
+                <button id="h3dZoomIn" type="button" aria-label="放大模型">＋</button>
+              </span>
+              <button class="h3d-ask" id="h3dAsk" type="button"
+                      aria-controls="assistant" aria-expanded="false">向我提问</button>
+              <span class="h3d-tip">也可以直接拖 · 滚轮缩放</span>
+            </div>
+
+            <p class="h3d-note" id="h3dNote">模型由混元3D 生成 · 约 1.2MB · 进入页面后才加载</p>
+          </div>
         </div>
       </section>
 
@@ -115,83 +202,92 @@
           <h2>探索方向</h2>
           <span class="sec-line"></span>
         </header>
-        <p class="sec-sub reveal">鼠标悬停卡片即可展开详情，移开后自动收起。</p>
+        <p class="sec-sub reveal">悬停（或点按）卡片展开详情，移开自动收起。</p>
 
-        <div class="dir-entry reveal" tabindex="0" aria-expanded="false">
+        <div class="dir-entry reveal" tabindex="0" role="button" aria-expanded="false">
           <div class="dir-head">
             <h3>嵌入式软件</h3>
             <svg class="dir-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </div>
           <div class="dir-panel">
             <div class="dir-panel-inner">
-              <p class="desc">让代码跑在每一块板子上——从点亮第一颗 LED 开始，一步步深入单片机与底层的世界。</p>
+              <p class="desc">让代码真正跑在板子上——从点亮第一颗 LED 起步，一路摸到单片机、寄存器与底层的世界。</p>
               <ul class="pills">
-                <li>C 语言</li><li>单片机</li><li>固件开发</li>
+                <li>C 语言</li><li>单片机</li><li>固件开发</li><li>调试排障</li>
               </ul>
             </div>
           </div>
         </div>
 
-        <div class="dir-entry reveal" tabindex="0" aria-expanded="false">
+        <div class="dir-entry reveal" tabindex="0" role="button" aria-expanded="false">
           <div class="dir-head">
             <h3>嵌入式硬件</h3>
             <svg class="dir-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
           </div>
           <div class="dir-panel">
             <div class="dir-panel-inner">
-              <p class="desc">从原理图到实物，亲手把想法焊成电路。传感器、电路板，都是我感兴趣的玩具。</p>
+              <p class="desc">从原理图到实物，亲手把想法焊成电路。传感器和电路板，是我眼里最好玩的一堆积木。</p>
               <ul class="pills">
-                <li>电路设计</li><li>PCB</li><li>传感器</li>
+                <li>电路设计</li><li>PCB</li><li>传感器</li><li>焊接实物</li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 03 数字分身 -->
-      <section id="digital-human" class="sec">
+      <!-- 03 技能栈 -->
+      <section id="skills" class="sec">
         <header class="sec-head reveal">
           <span class="sec-num">03</span>
-          <h2>数字分身</h2>
+          <h2>技能栈</h2>
           <span class="sec-line"></span>
         </header>
-        <p class="sec-sub reveal">这是我的 3D 数字分身：拖动可以旋转，滚轮/双指可以缩放；旁边的气泡可以向"TA"提问，自动回答。</p>
+        <p class="sec-sub reveal">下面写的都是真正动过手、或正在系统啃的方向，不是简历上的形容词。</p>
 
-        <div class="dh-grid">
-          <div class="dh-stage reveal">
-            <model-viewer
-              id="dhModel"
-              src="models/digital-human.glb"
-              alt="邰穗江的 3D 数字分身"
-              camera-controls
-              auto-rotate
-              auto-rotate-delay="2000"
-              rotation-per-second="18deg"
-              interaction-prompt="auto"
-              shadow-intensity="1.1"
-              shadow-softness="0.8"
-              exposure="1.0"
-              touch-action="pan-y"
-              loading="lazy">
-            </model-viewer>
-            <p class="dh-hint">🖱️ 拖动旋转 · 滚轮缩放 · 手机双指操作</p>
-          </div>
+        <div class="skill-grid">
+          <article class="skill-card reveal">
+            <div class="skill-head">
+              <span class="skill-idx">S1</span>
+              <h3>嵌入式软件</h3>
+            </div>
+            <p class="skill-note">当前主攻方向</p>
+            <ul class="chips">
+              <li>C 语言</li><li>单片机</li><li>固件开发</li><li>调试排障</li>
+            </ul>
+          </article>
 
-          <div class="dh-chat reveal">
-            <div class="dh-msgs" id="dhMsgs" aria-live="polite">
-              <div class="dh-msg dh-msg-bot">你好！我是邰穗江的<b>数字分身</b> 🤖<br>关于我的情况可以尽管问我～</div>
+          <article class="skill-card reveal">
+            <div class="skill-head">
+              <span class="skill-idx">S2</span>
+              <h3>硬件与电路</h3>
             </div>
-            <div class="dh-chips" id="dhChips">
-              <button type="button" data-q="你是谁？">你是谁？</button>
-              <button type="button" data-q="你拿过什么奖？">你拿过什么奖？</button>
-              <button type="button" data-q="在做什么项目？">在做什么项目？</button>
-              <button type="button" data-q="怎么联系你？">怎么联系你？</button>
+            <p class="skill-note">同步摸索，动手优先</p>
+            <ul class="chips">
+              <li>电路设计</li><li>PCB</li><li>传感器应用</li><li>焊接实物</li>
+            </ul>
+          </article>
+
+          <article class="skill-card reveal">
+            <div class="skill-head">
+              <span class="skill-idx">S3</span>
+              <h3>Web 与工具</h3>
             </div>
-            <form class="dh-input" id="dhForm" autocomplete="off">
-              <input id="dhInput" type="text" maxlength="60" placeholder="输入问题，向数字分身提问…" aria-label="输入问题">
-              <button type="submit" aria-label="发送">发送</button>
-            </form>
-          </div>
+            <p class="skill-note">这个主页就是手写的</p>
+            <ul class="chips">
+              <li>HTML</li><li>CSS</li><li>JavaScript</li><li>Git</li>
+            </ul>
+          </article>
+
+          <article class="skill-card reveal">
+            <div class="skill-head">
+              <span class="skill-idx">S4</span>
+              <h3>项目实战</h3>
+            </div>
+            <p class="skill-note">在比赛里练出来的</p>
+            <ul class="chips">
+              <li>大创立项</li><li>挑战杯</li><li>计算机设计大赛</li><li>程序设计</li>
+            </ul>
+          </article>
         </div>
       </section>
 
@@ -202,55 +298,56 @@
           <h2>竞赛荣誉</h2>
           <span class="sec-line"></span>
         </header>
+        <p class="sec-sub reveal">带证书标记的奖项，点击即可查看原图。</p>
 
         <p class="group-label">专业竞赛类</p>
         <ul class="entries">
           <li class="entry reveal has-cert" data-cert="cert-03.jpg">
-            <p class="entry-meta">国家级</p>
+            <p class="entry-meta lv-1">国家级</p>
             <div class="entry-body">
               <h3>中国机器人及人工智能大赛</h3>
               <p class="desc">三等奖</p>
             </div>
           </li>
           <li class="entry reveal">
-            <p class="entry-meta">自治区级</p>
+            <p class="entry-meta lv-2">自治区级</p>
             <div class="entry-body">
               <h3>大学生创新创业训练计划</h3>
               <p class="desc">自治区级立项（共 2 项）</p>
             </div>
           </li>
           <li class="entry reveal has-cert" data-cert="cert-02.jpg">
-            <p class="entry-meta">自治区级</p>
+            <p class="entry-meta lv-2">自治区级</p>
             <div class="entry-body">
-              <h3>"挑战杯"竞赛（2025—2026 学年）</h3>
+              <h3>“挑战杯”竞赛（2025—2026 学年）</h3>
               <p class="desc">广西赛区三等奖</p>
             </div>
           </li>
           <li class="entry reveal has-cert" data-cert="cert-05.jpg">
-            <p class="entry-meta">自治区级</p>
+            <p class="entry-meta lv-2">自治区级</p>
             <div class="entry-body">
               <h3>中国大学生计算机设计大赛</h3>
               <p class="desc">广西赛区三等奖</p>
             </div>
           </li>
           <li class="entry reveal has-cert" data-cert="cert-01.jpg">
-            <p class="entry-meta">自治区级</p>
+            <p class="entry-meta lv-2">自治区级</p>
             <div class="entry-body">
               <h3>广西大学生计算机设计大赛</h3>
               <p class="desc">二等奖</p>
             </div>
           </li>
           <li class="entry reveal">
-            <p class="entry-meta">校级</p>
+            <p class="entry-meta lv-3">校级</p>
             <div class="entry-body">
               <h3>广西职业师范学院第六届程序设计大赛</h3>
               <p class="desc">二等奖</p>
             </div>
           </li>
           <li class="entry reveal has-cert" data-cert="cert-14.jpg">
-            <p class="entry-meta">院级</p>
+            <p class="entry-meta lv-4">院级</p>
             <div class="entry-body">
-              <h3>"挑战杯"竞赛（2025—2026 学年）</h3>
+              <h3>“挑战杯”竞赛（2025—2026 学年）</h3>
               <p class="desc">院级一等奖</p>
             </div>
           </li>
@@ -259,14 +356,14 @@
         <p class="group-label">文体赛事类</p>
         <ul class="entries">
           <li class="entry reveal has-cert" data-cert="cert-11.jpg">
-            <p class="entry-meta">校级</p>
+            <p class="entry-meta lv-3">校级</p>
             <div class="entry-body">
               <h3>广西职业师范学院第七届运动会 · 800 米</h3>
               <p class="desc">一等奖</p>
             </div>
           </li>
           <li class="entry reveal has-cert" data-cert="cert-08.jpg">
-            <p class="entry-meta">校级</p>
+            <p class="entry-meta lv-3">校级</p>
             <div class="entry-body">
               <h3>广西职业师范学院第七届运动会 · 1500 米</h3>
               <p class="desc">二等奖</p>
@@ -277,21 +374,21 @@
         <p class="group-label">综合荣誉类</p>
         <ul class="entries">
           <li class="entry reveal has-cert" data-cert="cert-06.jpg">
-            <p class="entry-meta">校级</p>
+            <p class="entry-meta lv-3">校级</p>
             <div class="entry-body">
               <h3>校级三好学生</h3>
               <p class="desc">2025—2026 学年</p>
             </div>
           </li>
           <li class="entry reveal has-cert" data-cert="cert-13.png">
-            <p class="entry-meta">校级</p>
+            <p class="entry-meta lv-3">校级</p>
             <div class="entry-body">
               <h3>校级优秀共青团员</h3>
               <p class="desc">2025—2026 学年</p>
             </div>
           </li>
           <li class="entry reveal has-cert" data-cert="cert-04.jpg">
-            <p class="entry-meta">校级</p>
+            <p class="entry-meta lv-3">校级</p>
             <div class="entry-body">
               <h3>校级优秀志愿者</h3>
               <p class="desc">2025—2026 学年</p>
@@ -300,43 +397,14 @@
         </ul>
       </section>
 
-      <!-- 05 学生工作 -->
-      <section id="roles" class="sec">
-        <header class="sec-head reveal">
-          <span class="sec-num">05</span>
-          <h2>学生工作</h2>
-          <span class="sec-line"></span>
-        </header>
-        <ul class="entries">
-          <li class="entry reveal">
-            <p class="entry-meta">学生组织</p>
-            <div class="entry-body">
-              <h3>校跑步爱好者协会 · 训练部部长</h3>
-            </div>
-          </li>
-          <li class="entry reveal">
-            <p class="entry-meta">学生组织</p>
-            <div class="entry-body">
-              <h3>校物联网电子技术协会 · 技术部部长助理</h3>
-            </div>
-          </li>
-          <li class="entry reveal">
-            <p class="entry-meta">班级</p>
-            <div class="entry-body">
-              <h3>班级纪律委员</h3>
-            </div>
-          </li>
-        </ul>
-      </section>
-
-      <!-- 06 证书展示 -->
+      <!-- 05 证书展示 -->
       <section id="certs" class="sec">
         <header class="sec-head reveal">
-          <span class="sec-num">06</span>
+          <span class="sec-num">05</span>
           <h2>证书展示</h2>
           <span class="sec-line"></span>
         </header>
-        <p class="sec-sub reveal">点击证书可以放大查看原图。</p>
+        <p class="sec-sub reveal">点击证书放大查看原图，用左右方向键可以连续翻阅。</p>
 
         <ul class="cert-grid">
           <li class="reveal">
@@ -354,7 +422,7 @@
           <li class="reveal">
             <button class="cert-card" type="button" data-cap="第十二届“挑战杯”广西大学生创业计划竞赛 · 三等奖《桂韵智旅——广西非遗活态传承与文旅数字化服务先行者》">
               <img src="images/certs/cert-02.jpg" alt="挑战杯广西大学生创业计划竞赛三等奖证书" loading="lazy">
-              <span class="cert-name">"挑战杯"创业计划竞赛 · 广西三等奖</span>
+              <span class="cert-name">“挑战杯”创业计划竞赛 · 广西三等奖</span>
             </button>
           </li>
           <li class="reveal">
@@ -372,7 +440,7 @@
           <li class="reveal">
             <button class="cert-card" type="button" data-cap="旅游与公共管理学院 2026 年“挑战杯”大学生创业计划竞赛 · 一等奖《颐和远行——社会工作融合式老年文旅服务》">
               <img src="images/certs/cert-14.jpg" alt="院级挑战杯大学生创业计划竞赛一等奖证书" loading="lazy">
-              <span class="cert-name">"挑战杯"创业计划竞赛 · 院级一等奖</span>
+              <span class="cert-name">“挑战杯”创业计划竞赛 · 院级一等奖</span>
             </button>
           </li>
           <li class="reveal">
@@ -393,7 +461,7 @@
               <span class="cert-name">校级优秀志愿者</span>
             </button>
           </li>
-          <li class="reveal">
+          <li class="reveal" id="cert-running">
             <button class="cert-card" type="button" data-cap="学校第七届田径运动会 · 优秀运动员">
               <img src="images/certs/cert-15.jpg" alt="校运会优秀运动员荣誉证书" loading="lazy">
               <span class="cert-name">校运会 · 优秀运动员</span>
@@ -438,21 +506,129 @@
         </ul>
       </section>
 
-      <!-- 07 联系 -->
-      <section id="contact" class="sec">
+      <!-- 06 学生工作 -->
+      <section id="roles" class="sec">
+        <header class="sec-head reveal">
+          <span class="sec-num">06</span>
+          <h2>学生工作</h2>
+          <span class="sec-line"></span>
+        </header>
+        <ul class="entries">
+          <li class="entry reveal">
+            <p class="entry-meta">学生组织</p>
+            <div class="entry-body">
+              <h3>校跑步爱好者协会 · 训练部部长</h3>
+              <p class="desc">负责日常训练的组织与带队，安排分组与配速。</p>
+            </div>
+          </li>
+          <li class="entry reveal">
+            <p class="entry-meta">学生组织</p>
+            <div class="entry-body">
+              <h3>校物联网电子技术协会 · 技术部部长助理</h3>
+              <p class="desc">协助技术部开展硬件实操与技术分享。</p>
+            </div>
+          </li>
+          <li class="entry reveal">
+            <p class="entry-meta">班级</p>
+            <div class="entry-body">
+              <h3>班级纪律委员</h3>
+              <p class="desc">负责班级课堂考勤与纪律管理。</p>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- 07 跑步训练 -->
+      <section id="running" class="sec">
         <header class="sec-head reveal">
           <span class="sec-num">07</span>
+          <h2>跑步训练</h2>
+          <span class="sec-line"></span>
+        </header>
+        <p class="sec-sub reveal">
+          如果说嵌入式是我在键盘上的长期主义，那中长跑就是我腿上的那一份。
+          成绩不算亮眼，但每一步都算数。
+        </p>
+
+        <div class="stat-grid">
+          <div class="stat reveal">
+            <p class="stat-val">2:10.25</p>
+            <p class="stat-label">800 米 · 最好成绩</p>
+            <p class="stat-sub">校运会 · 一等奖</p>
+          </div>
+          <div class="stat reveal">
+            <p class="stat-val">4:38.09</p>
+            <p class="stat-label">1500 米 · 最好成绩</p>
+            <p class="stat-sub">校运会 · 二等奖</p>
+          </div>
+          <div class="stat reveal">
+            <p class="stat-val">90.0<em>优秀</em></p>
+            <p class="stat-label">国家学生体质健康标准</p>
+            <p class="stat-sub">2025 年测试</p>
+          </div>
+          <div class="stat reveal">
+            <p class="stat-val">2025</p>
+            <p class="stat-label">南宁马拉松 · 赛事志愿者</p>
+            <p class="stat-sub">志愿服务证书</p>
+          </div>
+        </div>
+
+        <div class="pace-block reveal">
+          <p class="pace-title">平均配速<span>按成绩折算的每公里用时，条越长速度越快</span></p>
+          <div class="pace-list">
+            <div class="pace-row reveal" style="--w:100%">
+              <span class="pace-name">800 m</span>
+              <span class="pace-track"><span class="pace-fill"></span></span>
+              <span class="pace-time">2&prime;43&Prime; /km · 2:10.25</span>
+            </div>
+            <div class="pace-row reveal" style="--w:87.8%">
+              <span class="pace-name">1500 m</span>
+              <span class="pace-track"><span class="pace-fill"></span></span>
+              <span class="pace-time">3&prime;05&Prime; /km · 4:38.09</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="run-note reveal">
+          <p>
+            从大一开始在跑步爱好者协会带训练，课后的操场和夜跑的路灯是我的第二自习室。
+            想约练、想聊配速，或者想一起从 800 米开始，随时来找我。
+          </p>
+          <ul class="pills">
+            <li>中长跑</li><li>协会带训</li><li>夜跑</li><li>马拉松志愿者</li>
+          </ul>
+          <div class="btn-row">
+            <a class="btn btn-plain" href="#cert-running">定位跑步类证书</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 08 联系 -->
+      <section id="contact" class="sec">
+        <header class="sec-head reveal">
+          <span class="sec-num">08</span>
           <h2>联系我</h2>
           <span class="sec-line"></span>
         </header>
         <div class="prose reveal">
           <p>
-            无论是<strong>嵌入式学习</strong>、<strong>竞赛组队</strong>，还是约一场<strong>夜跑</strong>，都欢迎找我交流。
+            无论是<strong>嵌入式学习</strong>、<strong>竞赛组队</strong>，还是约一场<strong>夜跑</strong>，
+            都欢迎找我交流。邮件和电话都行，GitHub 上也能找到我。
           </p>
-          <p class="mail-line">邮箱：<a href="mailto:2759342832@qq.com">2759342832@qq.com</a></p>
+          <dl class="contact-list">
+            <div>
+              <dt>邮箱</dt>
+              <dd><a href="mailto:2759342832@qq.com">2759342832@qq.com</a></dd>
+            </div>
+            <div>
+              <dt>电话</dt>
+              <dd><a href="tel:18084524692">18084524692</a></dd>
+            </div>
+          </dl>
         </div>
         <div class="btn-row reveal">
           <a class="btn" href="mailto:2759342832@qq.com">发邮件给我</a>
+          <a class="btn btn-plain" href="tel:18084524692">拨打电话</a>
           <a class="btn btn-plain" href="https://github.com/SuiZhen111" target="_blank" rel="noopener">GitHub</a>
         </div>
       </section>
@@ -462,6 +638,40 @@
       </footer>
     </main>
   </div>
+
+  <!-- ============ 数字人助手 ============ -->
+  <section class="assistant" id="assistant" hidden aria-label="数字人助手">
+    <header class="asst-head">
+      <div class="asst-id">
+        <span class="asst-avatar" aria-hidden="true">邰</span>
+        <div class="asst-meta">
+          <strong>穗江的 3D 数字分身</strong>
+          <span class="asst-status" id="asstStatus"><i></i>在线 · 可以提问</span>
+        </div>
+      </div>
+      <button class="asst-close" id="asstClose" type="button" aria-label="关闭助手">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+
+    <div class="asst-msgs" id="asstMsgs" role="log" aria-live="polite" aria-relevant="additions"></div>
+
+    <div class="asst-quick" role="group" aria-label="快捷问题">
+      <button type="button" data-q="做个自我介绍">做个自我介绍</button>
+      <button type="button" data-q="取得过什么成绩？">取得过什么成绩？</button>
+      <button type="button" data-q="会什么技能？">会什么技能？</button>
+      <button type="button" data-q="想做嵌入式吗？">想做嵌入式吗？</button>
+      <button type="button" data-q="怎么联系你？">怎么联系你？</button>
+      <button type="button" data-q="平时喜欢做什么？">平时喜欢做什么？</button>
+    </div>
+
+    <form class="asst-form" id="asstForm" autocomplete="off">
+      <input id="asstInput" type="text" maxlength="60" placeholder="问他点什么…" aria-label="输入你的问题">
+      <button type="submit" aria-label="发送问题">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+  </section>
 
   <!-- 证书灯箱 -->
   <div class="lightbox" id="lightbox" hidden>

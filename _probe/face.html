@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>face probe（临时，用完删）</title>
+<style>html,body{margin:0;background:#0a1020;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">
+{"imports":{
+  "three":"../vendor/three/build/three.module.min.js",
+  "three/addons/":"../vendor/three/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+const qs = new URLSearchParams(location.search);
+const MODEL = qs.get('m') || '../images/avatar3d/model.glb';
+const W = Number(qs.get('w') || 1200);
+const H = Number(qs.get('h') || 800);
+const Y = Number(qs.get('y') || 1.06);
+const D = Number(qs.get('d') || 0.45);
+const EX = Number(qs.get('ex') || 1.05);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(1);
+renderer.setSize(W, H, false);
+renderer.setClearColor(0x0a1020, 1);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = EX;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, W / H, 0.02, 80);
+
+const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(2.4, 3.4, 4.2);
+const rim = new THREE.DirectionalLight(0x64ffda, 2.0); rim.position.set(-3.2, 1.8, -3.4);
+const fill = new THREE.DirectionalLight(0xa5b4fc, 0.9); fill.position.set(-2.8, 0.8, 2.6);
+const hemi = new THREE.HemisphereLight(0xe6f6ff, 0x0a1730, 0.85);
+scene.add(key, rim, fill, hemi);
+
+let obj = null;
+window.__ready = false;
+window.__err = null;
+const loader = new GLTFLoader();
+loader.setMeshoptDecoder(MeshoptDecoder);
+loader.load(MODEL, g => {
+  obj = g.scene;
+  scene.add(obj);
+  const box = new THREE.Box3().setFromObject(obj);
+  window.__bbox = [box.min.toArray(), box.max.toArray()];
+  window.__ready = true;
+}, undefined, e => { window.__err = String(e && e.message || e); });
+
+const ray = new THREE.Raycaster();
+
+window.__setCam = (px, py, pz, tx, ty, tz) => {
+  camera.position.set(px, py, pz);
+  camera.lookAt(tx, ty, tz);
+  camera.updateMatrixWorld(true);
+  return [camera.position.toArray(), [tx, ty, tz]];
+};
+
+/* 从画布像素发射线，按距离从近到远返回所有命中 */
+window.__hits = (px, py) => {
+  if (!obj) return null;
+  const r = renderer.domElement.getBoundingClientRect();
+  const ndc = new THREE.Vector2((px / r.width) * 2 - 1, -((py / r.height) * 2 - 1));
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObject(obj, true);
+  return hits.map(h => {
+    const g = h.object.geometry;
+    const a = g.index.getX(h.faceIndex * 3), b = g.index.getX(h.faceIndex * 3 + 1), c = g.index.getX(h.faceIndex * 3 + 2);
+    const u = g.attributes.uv;
+    const uvv = h.uv ? [h.uv.x, h.uv.y] : [0, 0];
+    const nr = h.normal || (h.face && h.face.normal);
+    const nrm = nr ? [nr.x, nr.y, nr.z] : [0, 0, 0];
+    return {
+      d: h.distance, fi: h.faceIndex,
+      p: [h.point.x, h.point.y, h.point.z],
+      n: nrm,
+      uvq: uvv,
+      uv: [[u.getX(a), u.getY(a)], [u.getX(b), u.getY(b)], [u.getX(c), u.getY(c)]]
+    };
+  });
+};
+
+/* 在矩形上按 step 网格采样，返回命中的三角形（按 faceIndex 去重）。
+   pick=0 取最近命中，-1 取最远命中（穿透镜片看眼球） */
+window.__pickBox = (x0, y0, x1, y1, step, pick) => {
+  const map = new Map();
+  for (let y = y0; y <= y1; y += step) {
+    for (let x = x0; x <= x1; x += step) {
+      const hs = window.__hits(x, y);
+      if (!hs || !hs.length) continue;
+      const h = (pick === -1) ? hs[hs.length - 1] : hs[0];
+      map.set(h.fi, h);
+    }
+  }
+  return Array.from(map.values());
+};
+
+window.__render = () => { renderer.render(scene, camera); return true; };
+
+/* 连通分量：判断眼球是不是独立的几何壳 */
+window.__components = (maxFaces) => {
+  maxFaces = maxFaces || 20000;
+  let mesh = null;
+  obj.traverse(o => { if (o.isMesh && !mesh) mesh = o; });
+  const geo = mesh.geometry;
+  const pos = geo.attributes.position;
+  const idx = geo.index;
+  const nv = pos.count, m = idx.count;
+  const parent = new Int32Array(nv);
+  for (let i = 0; i < nv; i++) parent[i] = i;
+  function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+  function uni(a, b) { a = find(a); b = find(b); if (a !== b) parent[a] = b; }
+  for (let i = 0; i < m; i += 3) uni(idx.getX(i), idx.getX(i + 1)), uni(idx.getX(i + 1), idx.getX(i + 2));
+  const groups = new Map();
+  for (let i = 0; i < m; i += 3) {
+    const r = find(idx.getX(i));
+    let e = groups.get(r);
+    if (!e) { e = { n: 0, v: [] }; groups.set(r, e); }
+    e.n++;
+    if (e.n <= maxFaces * 2) e.v.push(idx.getX(i), idx.getX(i + 1), idx.getX(i + 2));
+  }
+  mesh.updateWorldMatrix(true, false);
+  const tmp = new THREE.Vector3();
+  const out = [];
+  for (const [r, e] of groups) {
+    if (e.n > maxFaces) continue;
+    const min = [1e9, 1e9, 1e9], max = [-1e9, -1e9, -1e9];
+    for (const vi of e.v) {
+      tmp.set(pos.getX(vi), pos.getY(vi), pos.getZ(vi)).applyMatrix4(mesh.matrixWorld);
+      const a = [tmp.x, tmp.y, tmp.z];
+      for (let k = 0; k < 3; k++) { if (a[k] < min[k]) min[k] = a[k]; if (a[k] > max[k]) max[k] = a[k]; }
+    }
+    out.push({ faces: e.n, min: min.map(v => +v.toFixed(3)), max: max.map(v => +v.toFixed(3)) });
+  }
+  out.sort((a, b) => a.faces - b.faces);
+  return { total: groups.size, small: out.slice(0, 40) };
+};
+
+function loop() { requestAnimationFrame(loop); if (obj) renderer.render(scene, camera); }
+loop();
+window.__setCam(0, Y, D, 0, Y - 0.02, 0);
+</script>
+</body>
+</html>
